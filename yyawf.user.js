@@ -1,8 +1,11 @@
 // ==UserScript==
 // @name              yyawf
-// @description       Under construction
+// @description       微博过滤、界面清理和首页跳转，Windyskr/nwf 维护的 yyawf fork
 // @namespace         https://github.com/windyskr
-// @version           0.0.12
+// @version           0.0.13
+// @homepageURL       https://github.com/Windyskr/nwf
+// @updateURL         https://raw.githubusercontent.com/Windyskr/nwf/yyawf/yyawf.user.js
+// @downloadURL       https://raw.githubusercontent.com/Windyskr/nwf/yyawf/yyawf.user.js
 // @match             *://*.weibo.com/*
 // @noframes
 // @run-at            document-start
