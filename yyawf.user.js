@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name              yyawf
 // @description       Under construction
-// @namespace         https://github.com/tiansh
-// @version           0.0.11
+// @namespace         https://github.com/windyskr
+// @version           0.0.12
 // @match             *://*.weibo.com/*
 // @noframes
 // @run-at            document-start
@@ -207,7 +207,7 @@ const payload = (Array(35).fill('\n').join('') + 'void(' + function (config, mes
   //#endregion
 
   //#region 配置
-  const getConfigBoolean = key => yawfConfig[key] === true;
+  const getConfigBoolean = (key, defaultValue = false) => (yawfConfig[key] ?? defaultValue) === true;
   const getConfigStrings = key => Array.isArray(yawfConfig[key]) ? yawfConfig[key].filter(x => typeof x === 'string') : [];
   //#endregion
 
@@ -377,6 +377,33 @@ const payload = (Array(35).fill('\n').join('') + 'void(' + function (config, mes
         runLifecycleListeners('updated', this?._);
       }
     });
+  });
+  //#endregion
+
+  //#region 首页跳转
+  appReady.then(app => {
+    if (!getConfigBoolean('navigation::latestHome', true)) return;
+    if (!['weibo.com', 'www.weibo.com'].includes(location.hostname)) return;
+    const userId = String($CONFIG.user?.idstr ?? '');
+    if (!/^\d+$/.test(userId)) return;
+    const router = app.config.globalProperties.$router;
+    if (!router?.beforeEach || !router?.isReady) return;
+    const latestHomeRoute = route => {
+      if (route.path !== '/') return;
+      return {
+        path: '/mygroups',
+        query: { ...route.query, gid: '11000' + userId },
+        hash: route.hash,
+        replace: true,
+      };
+    };
+    // 处理站内导航；只匹配首页，避免在分组页重复跳转。
+    router.beforeEach(latestHomeRoute);
+    // 初始导航可能在注册守卫前完成，等待路由就绪后再检查一次。
+    router.isReady().then(() => {
+      const target = latestHomeRoute(router.currentRoute.value);
+      if (target) return router.replace(target);
+    }).catch(error => console.error('[yyawf] 首页跳转失败', error));
   });
   //#endregion
 
@@ -1066,7 +1093,7 @@ const renderConfig = (container, profileId, template) => {
     onChange(value) { this.renderValue(value); }
   }
   class CheckboxConfigItem extends ConfigItem {
-    renderValue(value) { this.dom.checked = value; }
+    renderValue(value) { this.dom.checked = value ?? this.defaultValue; }
   }
   class SelectConfigItem extends ConfigItem {
     renderValue(value) { this.dom.value = value; }
@@ -1442,6 +1469,14 @@ const CONFIG_TEMPLATE = /* html */`
     </yawf-group>
     <yawf-group name="其他" class="yawf-compact-group">
       <yawf-rule id="cleanup::ad"><yawf-checkbox key="cleanup::ad">广告</yawf-checkbox></yawf-rule>
+    </yawf-group>
+  </yawf-tab>
+  <yawf-tab name="页面跳转">
+    <yawf-group name="首页">
+      <yawf-rule id="navigation::latestHome">
+        <yawf-checkbox key="navigation::latestHome" default="true">进入首页时自动跳转到最新微博</yawf-checkbox>
+      </yawf-rule>
+      <p>默认开启，适用于直接打开微博首页和站内返回首页。修改设置后刷新页面生效。</p>
     </yawf-group>
   </yawf-tab>
   <yawf-tab name="关于">
